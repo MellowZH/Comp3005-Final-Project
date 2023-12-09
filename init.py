@@ -84,13 +84,12 @@ try:
     
     # Make the changes to the database persistent
     conn.commit()
-    print('Users table created successfully!')
+    print('All tables created successfully!')
 
-    # Execute a command: insert initial data into students table
-    cur.execute("""INSERT INTO students (first_name, last_name, email, enrollment_date) VALUES
-    ('John', 'Doe', 'john.doe@example.com', '2023-09-01'),
-    ('Jane', 'Smith', 'jane.smith@example.com', '2023-09-01'),
-    ('Jim', 'Beam', 'jim.beam@example.com', '2023-09-02')""")
+    # Execute a command: insert initial data into all tables
+    cur.execute("""INSERT INTO roles(role_name) VALUES
+    ('Member'),
+    ('Trainer');""")
 
     # Make the changes to the database persistent
     conn.commit()
