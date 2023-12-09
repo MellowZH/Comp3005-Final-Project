@@ -51,16 +51,36 @@ try:
                 pushup_best TEXT NOT NULL,
                 member INT references members(user_id))""")
                 
+    # Execute a command: create rooms table
+    cur.execute("""CREATE TABLE rooms(
+                room_id SERIAL PRIMARY KEY references users(user_id),
+                location TEXT NOT NULL)""")
+                
     # Execute a command: create personal sessions table
-    cur.execute("""CREATE TABLE personal_session(
+    cur.execute("""CREATE TABLE personal_sessions(
                 ps_id SERIAL PRIMARY KEY,
+                date DATE,
                 trainer INT references trainers(user_id),
-                member INT references members(user_id))""")
+                member INT references members(user_id),
+                room INT references rooms(room_id))""")
                 
     # Execute a command: create group sessions table
-    cur.execute("""CREATE TABLE personal_session(
+    cur.execute("""CREATE TABLE group_sessions(
                 gs_id SERIAL PRIMARY KEY,
-                trainer INT references trainers(user_id))""")
+                date DATE,
+                trainer INT references trainers(user_id),
+                room INT references rooms(room_id))""")
+    
+    # Execute a command: create group session attendees table
+    cur.execute("""CREATE TABLE group_session_attendees(
+                gs_id INT PRIMARY KEY references group_sessions(gs_id),
+                member INT PRIMARY KEY references members(user_id))""")
+    
+    # Execute a command: create progress notes table
+    cur.execute("""CREATE TABLE progress_notes(
+                note_id INT SERIAL PRIMARY KEY,
+                note TEXT NOT NULL,
+                profile INT references profiles(profile_id))""")
     
     # Make the changes to the database persistent
     conn.commit()
