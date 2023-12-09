@@ -80,16 +80,61 @@ try:
     cur.execute("""CREATE TABLE progress_notes(
                 note_id INT SERIAL PRIMARY KEY,
                 note TEXT NOT NULL,
+                trainer INT references trainers(user_id),
                 profile INT references profiles(profile_id))""")
     
     # Make the changes to the database persistent
     conn.commit()
     print('All tables created successfully!')
 
-    # Execute a command: insert initial data into all tables
+    # Execute a command: insert initial data into roles table
     cur.execute("""INSERT INTO roles(role_name) VALUES
     ('Member'),
-    ('Trainer');""")
+    ('Trainer')""")
+    
+    # Execute a command: insert initial data into users table
+    cur.execute("""INSERT INTO users(password, first_name, last_name, email, phone, DOB, role) VALUES
+    ('password', 'John', 'Doe', 'john@example.com', '613-841-1122', '1990-01-01', 1),
+    ('password', 'Jane', 'Smith', 'jane@example.com', '613-834-6573', '1995-05-05', 1),
+    ('password', 'Bob', 'Lee', 'bob@example.com', '613-555-6677', '1999-08-23', 2""")
+
+    # Execute a command: insert initial data into members table
+    cur.execute("""INSERT INTO members(user_id, loyalty_points, join_date) VALUES
+    (1, 100, '2023-01-01'),
+    (2, 150, '2023-02-05')""")
+    
+    # Execute a command: insert initial data into trainers table
+    cur.execute("""INSERT INTO trainers(user_id, start_date) VALUES
+    (3, '2020-12-01')""")
+    
+    # Execute a command: insert initial data into profiles table
+    cur.execute("""INSERT INTO profiles(HRV, SPO2, RHR, 5k_goal, pushup_goal, 5k_best, pushup_best, member) VALUES
+    ('Good', 'Normal', 'Low', '20 minutes', '50 pushups', '18 minutes', '45 pushups', 1),
+    ('Excellent', 'High', 'Very low', '15 minutes', '40 pushups', '14 minutes', '38 pushups', 2)""")
+
+    # Execute a command: insert initial data into rooms table
+    cur.execute("""INSERT INTO rooms(location) VALUES
+    ('Room 1'),
+    ('Room 2')""")
+    
+    # Execute a command: insert initial data into personal_sessions table
+    cur.execute("""INSERT INTO personal_sessions(date, trainer, member, room) VALUES
+    ('2023-01-10', 3, 1, 1),
+    ('2023-01-15', 3, 2, 2)""")
+    
+    # Execute a command: insert initial data into group_sessions table
+    cur.execute("""INSERT INTO group_sessions(date, trainer, room) VALUES
+    ('2023-02-05', 3, 1)""")
+    
+    # Execute a command: insert initial data into group_session_attendees table
+    cur.execute("""INSERT INTO group_session_attendees(gs_id, member) VALUES
+    (1, 1),
+    (1, 2)""")
+    
+    # Execute a command: insert initial data into group_session_attendees table
+    cur.execute("""INSERT INTO progress_notes(note, trainer, profile) VALUES
+    ('Making good progress!', 3, 1),
+    ('Needs to work on endurance', 3, 2)""")
 
     # Make the changes to the database persistent
     conn.commit()
