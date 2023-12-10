@@ -30,13 +30,13 @@ try:
                 
     # Execute a command: create members table
     cur.execute("""CREATE TABLE members(
-                user_id PRIMARY KEY references users(user_id),
+                user_id INT PRIMARY KEY references users(user_id),
                 loyalty_points INT,
                 join_date DATE)""")
     
     # Execute a command: create trainers table
     cur.execute("""CREATE TABLE trainers(
-                user_id PRIMARY KEY references users(user_id),
+                user_id INT PRIMARY KEY references users(user_id),
                 start_date DATE)""")
                 
     # Execute a command: create profiles table
@@ -45,9 +45,9 @@ try:
                 HRV TEXT NOT NULL,
                 SPO2 TEXT NOT NULL,
                 RHR TEXT NOT NULL,
-                5k_goal TEXT NOT NULL,
+                "5k_goal" TEXT NOT NULL,
                 pushup_goal TEXT NOT NULL,
-                5k_best TEXT NOT NULL,
+                "5k_best" TEXT NOT NULL,
                 pushup_best TEXT NOT NULL,
                 member INT references members(user_id))""")
                 
@@ -73,12 +73,13 @@ try:
     
     # Execute a command: create group session attendees table
     cur.execute("""CREATE TABLE group_session_attendees(
-                gs_id INT PRIMARY KEY references group_sessions(gs_id),
-                member INT PRIMARY KEY references members(user_id))""")
+                gs_id INT references group_sessions(gs_id),
+                member INT references members(user_id),
+                PRIMARY KEY(gs_id, member))""")
     
     # Execute a command: create progress notes table
     cur.execute("""CREATE TABLE progress_notes(
-                note_id INT SERIAL PRIMARY KEY,
+                note_id SERIAL PRIMARY KEY,
                 note TEXT NOT NULL,
                 trainer INT references trainers(user_id),
                 profile INT references profiles(profile_id))""")
@@ -96,7 +97,7 @@ try:
     cur.execute("""INSERT INTO users(password, first_name, last_name, email, phone, DOB, role) VALUES
     ('password', 'John', 'Doe', 'john@example.com', '613-841-1122', '1990-01-01', 1),
     ('password', 'Jane', 'Smith', 'jane@example.com', '613-834-6573', '1995-05-05', 1),
-    ('password', 'Bob', 'Lee', 'bob@example.com', '613-555-6677', '1999-08-23', 2""")
+    ('password', 'Bob', 'Lee', 'bob@example.com', '613-555-6677', '1999-08-23', 2)""")
 
     # Execute a command: insert initial data into members table
     cur.execute("""INSERT INTO members(user_id, loyalty_points, join_date) VALUES
@@ -108,7 +109,7 @@ try:
     (3, '2020-12-01')""")
     
     # Execute a command: insert initial data into profiles table
-    cur.execute("""INSERT INTO profiles(HRV, SPO2, RHR, 5k_goal, pushup_goal, 5k_best, pushup_best, member) VALUES
+    cur.execute("""INSERT INTO profiles(HRV, SPO2, RHR, "5k_goal", pushup_goal, "5k_best", pushup_best, member) VALUES
     ('Good', 'Normal', 'Low', '20 minutes', '50 pushups', '18 minutes', '45 pushups', 1),
     ('Excellent', 'High', 'Very low', '15 minutes', '40 pushups', '14 minutes', '38 pushups', 2)""")
 
