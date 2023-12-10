@@ -48,6 +48,15 @@ def login():
         except Exception as error:
             print("ERROR:", error)
 
+    showMenu()
+
+def showMenu():
+    getRole()
+    if currUser.role == 'Member':
+        memberMenu()
+    elif currUser.role == 'Trainer':
+        trainerMenu()
+    
 def getRole():
     try:
         # Get role of logged in user
@@ -75,20 +84,132 @@ def getProfile():
     except Exception as error:
         print("ERROR:", error)
 
-def setGoals():
+def printProfile():
+    try:
+        if currUser.role == 'Trainer':
+            userID = input("Enter member's userID: ")
+            cur.execute(f"""SELECT profile_id FROM profiles
+                            WHERE member = {userID}""")
+            profileID = int(cur.fetchone()[0])
+        elif currUser.role == 'Member':
+            profileID = currUser.profileID
+
+        cur.execute(f"""SELECT * FROM profiles
+                        WHERE profile_id = {profileID}""")
+        rows = cur.fetchall()
+    except Exception as error:
+        print("ERROR:", error)
+        return
+
+    headers = ["user_id", "hrv", "spo2", "rhr", "5k_goal", "pushup_goal", "5k_best", "pushup_best", "member"]
+    # Print table headers with specific formatting
+    print(''.join(f"{header:<15}" for header in headers))
+    print("----------------------------------------------------------------------------------------------------------------------------------")
+
+    for row in rows:
+        print(''.join(f"{str(cell):<15}" for cell in row))
+
+    
+def updateHealthMetrics():
+    # Only members can set personal bests on their profile
+    res = input("Which metric would you like to update? (HRV, SPO2, RHR): ")
+    if res == 'HRV':
+        metric = 'hrv'
+    elif res == 'SPO2':
+        metric = 'spo2'
+    elif res == 'RHR':
+        metric = 'rhr'
+    else:
+        print("invalid response")
+        return
+
+    newMetric = input("What is your new metric: ")
+        
+    try:
+        cur.execute(f"""UPDATE profiles
+                        SET "{metric}" = '{newMetric}'
+                        WHERE profile_id = {currUser.profileID}""")
+        conn.commit()
+    except Exception as error:
+        print("ERROR:", error)
+
+def updateGoals():
     # Only members can set goals on their profile
-    print(currUser.role)
-    if currUser.role == 'Member':
-        goal = input("Which goal would you like to set? (5k, pushups): ")
-        if goal == '5k':
-            newGoal = input("What is your new goal?: ")
-            try:
-                cur.execute(f"""UPDATE profiles
-                                SET "5k_goal" = '{newGoal}'
-                                WHERE profile_id = {currUser.profileID}""")
-                conn.commit()
-            except Exception as error:
-                print("ERROR:", error)
+    res = input("Which goal would you like to update? (5k, pushups): ")
+    if res == '5k':
+        goal = '5k_goal'
+    elif res == 'pushups':
+        goal = 'pushup_goal'
+    else:
+        print("invalid goal")
+        return
+
+    newGoal = input("What is your new goal?: ")
+
+    try:
+        cur.execute(f"""UPDATE profiles
+                        SET "{goal}" = '{newGoal}'
+                        WHERE profile_id = {currUser.profileID}""")
+        conn.commit()
+    except Exception as error:
+        print("ERROR:", error)
+
+def updateBests():
+    # Only members can set personal bests on their profile
+    res = input("Which personal best would you like to update? (5k, pushups): ")
+    if res == '5k':
+        best = '5k_goal'
+    elif res == 'pushups':
+        best = 'pushup_goal'
+    else:
+        print("invalid response")
+        return
+
+    newBest = input("What is your new personal best?: ")
+        
+    try:
+        cur.execute(f"""UPDATE profiles
+                        SET "{best}" = '{newBest}'
+                        WHERE profile_id = {currUser.profileID}""")
+        conn.commit()
+    except Exception as error:
+        print("ERROR:", error)
+    
+def memberMenu():
+    # Get member profile_id
+    getProfile()
+    
+    while True:
+        opt = input (
+"""What would you like to do? \n1. View profile \n2. Update health metrics \n3. Update fitness goals \n4. Update fitness achievements \n5. Check schedule
+6. Register for group session \n7. Check loyalty points \n8. Logout \n---> """
+)
+        match opt:
+            case '1':
+                printProfile()
+            case '2':
+                updateHealthMetrics()
+            case '3':
+                updateGoals()
+            case '4':
+                updateBests()
+            case '5':
+                check_loyalty_points()
+            case '6':
+                add_user_to_group_session()
+            case '7':
+                check_loyalty_points()
+            case '8':
+                global currUser 
+                currUser = User()
+                break
+            case _:
+                print("Invalid option. Please choose a valid option.")
+    login()           
+
+def trainerMenu():
+    while True:
+        opt = input("What would you like to do? (): ")
 
 def getAllStudents():
     # Execute a command: select all data from students table
@@ -184,8 +305,5 @@ def deleteStudent(student_id):
 if __name__ == '__main__':
     args = sys.argv
     login()
-    getRole()
-    getProfile()
-    setGoals()
     # Get cmd line arguments and pass them to the desired function
     # globals()[args[1]](*args[2:])
