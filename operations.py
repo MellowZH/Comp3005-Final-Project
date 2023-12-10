@@ -102,16 +102,13 @@ def printProfile():
         return
 
     headers = ["user_id", "hrv", "spo2", "rhr", "5k_goal", "pushup_goal", "5k_best", "pushup_best", "member"]
-    # Print table headers with specific formatting
     print(''.join(f"{header:<15}" for header in headers))
     print("----------------------------------------------------------------------------------------------------------------------------------")
 
     for row in rows:
         print(''.join(f"{str(cell):<15}" for cell in row))
 
-    
 def updateHealthMetrics():
-    # Only members can set personal bests on their profile
     res = input("Which metric would you like to update? (HRV, SPO2, RHR): ")
     if res == 'HRV':
         metric = 'hrv'
@@ -134,7 +131,6 @@ def updateHealthMetrics():
         print("ERROR:", error)
 
 def updateGoals():
-    # Only members can set goals on their profile
     res = input("Which goal would you like to update? (5k, pushups): ")
     if res == '5k':
         goal = '5k_goal'
@@ -155,7 +151,6 @@ def updateGoals():
         print("ERROR:", error)
 
 def updateBests():
-    # Only members can set personal bests on their profile
     res = input("Which personal best would you like to update? (5k, pushups): ")
     if res == '5k':
         best = '5k_goal'
@@ -175,13 +170,108 @@ def updateBests():
     except Exception as error:
         print("ERROR:", error)
     
+def printSchedule():
+    if currUser.role == 'Member':
+        try:
+            cur.execute(f"""SELECT date, first_name, last_name, room, session_type
+                            FROM (
+                                SELECT s.member, s.date, u.first_name, u.last_name, s.room, 'Personal' AS session_type
+                                FROM personal_sessions s
+                                JOIN users u ON s.trainer = u.user_id
+                            ) ps
+                            WHERE ps.member = {currUser.id}
+                            UNION
+                            SELECT date, first_name, last_name, room, session_type
+                            FROM (
+                                SELECT s.gs_id, s.date, u.first_name, u.last_name, s.room, 'Group' AS session_type
+                                FROM group_sessions s
+                                JOIN users u ON s.trainer = u.user_id
+                            ) gs
+                            INNER JOIN group_session_attendees gsa ON gs.gs_id = gsa.gs_id
+                            WHERE gsa.member = {currUser.id}
+                            ORDER BY date ASC""")
+            schedule = cur.fetchall()
+        except Exception as error:
+            print("ERROR:", error)
+    
+        if schedule:
+            headers = ["Date", "Time", 'Trainer', 'Room', 'Type']
+            print(''.join(f"{header:<15}" for header in headers))
+            print("---------------------------------------------------------------")
+            for session in schedule:
+                session_date, first_name, last_name, room, session_type = session
+                print(f"{session_date.strftime('%Y-%m-%d'):<15}{session_date.strftime('%H:%M:%S'):<15}{(first_name + " " + last_name):<15}{room:<15}{session_type:<15}")
+        else:
+            print("You are not registed for any sessions")
+    
+    elif currUser.role == 'Trainer':
+        try:
+            cur.execute(f"""SELECT date, room, 'Personal' AS session_type FROM personal_sessions
+                            WHERE trainer = {currUser.id}
+                            UNION
+                            SELECT date, room, 'Group' AS session_type FROM group_sessions
+                            WHERE trainer = {currUser.id}
+                            ORDER BY date ASC""")
+            schedule = cur.fetchall()
+        except Exception as error:
+            print("ERROR:", error)
+        
+        if schedule:
+            headers = ["Date", "Time", 'Room', 'Type']
+            print(''.join(f"{header:<15}" for header in headers))
+            print("--------------------------------------------------------")
+            for session in schedule:
+                session_date, room, session_type = session
+                print(f"{session_date.strftime('%Y-%m-%d'):<15}{session_date.strftime('%H:%M:%S'):<15}{room:<15}{session_type:<15}")
+
+def registerForSession():
+    try:
+        cur.execute(f"""SELECT gs_id, date 
+                        FROM group_sessions
+                        WHERE gs_id NOT IN (
+                            SELECT gs_id
+                            FROM group_session_attendees
+                            WHERE member = {currUser.id})""")
+        sessions = cur.fetchall()
+
+        if sessions == []:
+            raise Exception("You are already in all available group sessions")
+        
+        headers = ['Session ID', "Date"]
+        print("You can register for the following sessions:\n ")
+        print(''.join(f"{header:<15}" for header in headers))
+        print("--------------------------------------------")
+        
+        for session in sessions:
+            print(''.join(f"{str(cell):<15}" for cell in session))
+        
+        sessionID = input("\nWhich session would you like to register in (type the ID): ")
+        cur.execute(f"""INSERT INTO group_session_attendees (gs_id, member)
+                        VALUES ({sessionID}, {currUser.id})""")
+        conn.commit()
+        print("\nYou have successfully registered for this session. Here is your updated schedule:")
+        printSchedule()
+
+    except Exception as error:
+            print("ERROR:", error)
+
+def checkLoyaltyPoints():
+    try:
+        cur.execute(f"""SELECT loyalty_points FROM members
+                        WHERE user_id = {currUser.id}""")
+        
+        print("\nYou have " + str(cur.fetchone()[0]) + " loyalty points")
+    
+    except Exception as error:
+        print("ERROR:", error)
+
 def memberMenu():
     # Get member profile_id
     getProfile()
     
     while True:
         opt = input (
-"""What would you like to do? \n1. View profile \n2. Update health metrics \n3. Update fitness goals \n4. Update fitness achievements \n5. Check schedule
+"""\nWhat would you like to do? \n1. View profile \n2. Update health metrics \n3. Update fitness goals \n4. Update fitness achievements \n5. Check schedule
 6. Register for group session \n7. Check loyalty points \n8. Logout \n---> """
 )
         match opt:
@@ -194,11 +284,11 @@ def memberMenu():
             case '4':
                 updateBests()
             case '5':
-                check_loyalty_points()
+                printSchedule()
             case '6':
-                add_user_to_group_session()
+                registerForSession()
             case '7':
-                check_loyalty_points()
+                checkLoyaltyPoints()
             case '8':
                 global currUser 
                 currUser = User()
@@ -209,7 +299,19 @@ def memberMenu():
 
 def trainerMenu():
     while True:
-        opt = input("What would you like to do? (): ")
+        opt = input (
+"""\nWhat would you like to do? \n1. Check schedule \n2. Logout \n---> """
+)
+        match opt:
+            case '1':
+                printSchedule()
+            case '2':
+                global currUser 
+                currUser = User()
+                break
+            case _:
+                print("Invalid option. Please choose a valid option.")
+    login() 
 
 def getAllStudents():
     # Execute a command: select all data from students table

@@ -59,7 +59,7 @@ try:
     # Execute a command: create personal sessions table
     cur.execute("""CREATE TABLE personal_sessions(
                 ps_id SERIAL PRIMARY KEY,
-                date DATE,
+                date DATETIME,
                 trainer INT references trainers(user_id),
                 member INT references members(user_id),
                 room INT references rooms(room_id))""")
@@ -67,7 +67,7 @@ try:
     # Execute a command: create group sessions table
     cur.execute("""CREATE TABLE group_sessions(
                 gs_id SERIAL PRIMARY KEY,
-                date DATE,
+                date DATETIME,
                 trainer INT references trainers(user_id),
                 room INT references rooms(room_id))""")
     
