@@ -136,7 +136,7 @@ try:
     # Execute a command: insert initial data into group_sessions table
     cur.execute("""INSERT INTO group_sessions(date, trainer, room) VALUES
     ('2023-02-05 13:20:00', 3, 1),
-    ('2023-03-02 16:00:00', 3, 2""")
+    ('2023-03-02 16:00:00', 3, 2)""")
     
     # Execute a command: insert initial data into group_session_attendees table
     cur.execute("""INSERT INTO group_session_attendees(gs_id, member) VALUES

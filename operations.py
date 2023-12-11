@@ -185,9 +185,9 @@ def updateGoals():
 def updateBests():
     res = input("Which personal best would you like to update? (5k, pushups): ")
     if res == '5k':
-        best = '5k_goal'
+        best = '5k_best'
     elif res == 'pushups':
-        best = 'pushup_goal'
+        best = 'pushup_best'
     else:
         print("invalid response")
         return
@@ -310,8 +310,8 @@ def addUser():
                         WHERE role_name = '{role}'""")
         
         # Execute a command: add user and create profile if new user is member
-        cur.execute(f"""INSERT INTO users (password, first_name, last_name, email, phone, role)
-                        VALUES ('password', '{first_name}', '{last_name}', '{email}', '{phone}', {cur.fetchone()[0]} )
+        cur.execute(f"""INSERT INTO users (password, first_name, last_name, email, phone, dob, role)
+                        VALUES ('password', '{first_name}', '{last_name}', '{email}', '{phone}','{dob}', {cur.fetchone()[0]} )
                         RETURNING user_id""")
         
         new_id = cur.fetchone()[0]
