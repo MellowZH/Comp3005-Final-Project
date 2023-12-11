@@ -1,4 +1,4 @@
-DATABASE_NAME = 'Assignment 4'
+DATABASE_NAME = 'finalProject'
 USER_NAME = 'postgres'
 PASSWORD = 'password' 
 HOST = 'localhost'      #localhost if you're running database and code on same machine
