@@ -38,6 +38,10 @@ try:
     cur.execute("""CREATE TABLE trainers(
                 user_id INT PRIMARY KEY references users(user_id),
                 start_date DATE)""")
+    
+    # Execute a command: create admins table
+    cur.execute("""CREATE TABLE admins(
+                user_id INT PRIMARY KEY references users(user_id))""")
                 
     # Execute a command: create profiles table
     cur.execute("""CREATE TABLE profiles(
@@ -91,13 +95,15 @@ try:
     # Execute a command: insert initial data into roles table
     cur.execute("""INSERT INTO roles(role_name) VALUES
     ('Member'),
-    ('Trainer')""")
+    ('Trainer'),
+    ('Admin')""")
     
     # Execute a command: insert initial data into users table
     cur.execute("""INSERT INTO users(password, first_name, last_name, email, phone, DOB, role) VALUES
     ('password', 'John', 'Doe', 'john@example.com', '613-841-1122', '1990-01-01', 1),
     ('password', 'Jane', 'Smith', 'jane@example.com', '613-834-6573', '1995-05-05', 1),
-    ('password', 'Bob', 'Lee', 'bob@example.com', '613-555-6677', '1999-08-23', 2)""")
+    ('password', 'Bob', 'Lee', 'bob@example.com', '613-555-6677', '1999-08-23', 2),
+    ('password', 'Zack', 'Hollmann', 'zh@example.com', '613-534-6763', '2002-05-13', 3)""")
 
     # Execute a command: insert initial data into members table
     cur.execute("""INSERT INTO members(user_id, loyalty_points, join_date) VALUES
@@ -107,6 +113,10 @@ try:
     # Execute a command: insert initial data into trainers table
     cur.execute("""INSERT INTO trainers(user_id, start_date) VALUES
     (3, '2020-12-01')""")
+
+    # Execute a command: insert initial data into admins table
+    cur.execute("""INSERT INTO admins(user_id) VALUES
+    (4)""")
     
     # Execute a command: insert initial data into profiles table
     cur.execute("""INSERT INTO profiles(HRV, SPO2, RHR, "5k_goal", pushup_goal, "5k_best", pushup_best, member) VALUES
