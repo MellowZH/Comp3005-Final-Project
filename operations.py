@@ -1,3 +1,4 @@
+from datetime import date
 import sys
 import psycopg2
 
@@ -56,6 +57,8 @@ def showMenu():
         memberMenu()
     elif currUser.role == 'Trainer':
         trainerMenu()
+    elif currUser.role == 'Admin':
+        adminMenu()
     
 def getRole():
     try:
@@ -80,9 +83,37 @@ def getProfile():
                         WHERE member = {currUser.id}""")
         
         currUser.profileID = int(cur.fetchone()[0])
-    
+        
+        # If new user, most of profile will be null
+        cur.execute(f"""SELECT hrv FROM profiles
+                        WHERE profile_id = {currUser.profileID}""")
+        
+        if cur.fetchone()[0] == None:
+            setUpProfile()
+
     except Exception as error:
         print("ERROR:", error)
+
+def setUpProfile():
+    print("Please fill out the following information in order to create your profile: ")
+    hrv = input("Enter your current HRV: ")
+    spo2 = input("Enter your current SPO2: ")
+    rhr = input("Enter your current RHR: ")
+    k_goal = input("Enter your 5k time goal: ")
+    pushup_goal = input("Enter your pushup goal: ")
+    k_best = input("Enter your 5k best time: ")
+    pushup_best = input("Enter your pushup best: ")
+
+    try:
+        cur.execute(f"""UPDATE profiles
+                        SET hrv = '{hrv}', spo2 = '{spo2}', rhr = '{rhr}', "5k_goal" = '{k_goal}', pushup_goal = '{pushup_goal}', "5k_best" = '{k_best}', pushup_best = '{pushup_best}'
+                        WHERE profile_id = {currUser.profileID}""")
+        conn.commit()
+
+    except Exception as error:
+        print("ERROR:", error)
+
+    print("Successfully registered profile")
 
 def printProfile():
     try:
@@ -91,6 +122,7 @@ def printProfile():
             cur.execute(f"""SELECT profile_id FROM profiles
                             WHERE member = {userID}""")
             profileID = int(cur.fetchone()[0])
+
         elif currUser.role == 'Member':
             profileID = currUser.profileID
 
@@ -265,6 +297,41 @@ def checkLoyaltyPoints():
     except Exception as error:
         print("ERROR:", error)
 
+def addUser():
+    first_name = input("Enter new user's first name: ")
+    last_name = input("Enter new user's last name: ")
+    email = input("Enter new user's email: ")
+    phone = input("Enter new user's phone number: ")
+    dob = input("Enter new user's date of birth (yyyy-mm-dd): ")
+    role = input("Enter new user's role (Member or Trainer): ")
+
+    try:
+        cur.execute(f"""SELECT role_id FROM roles
+                        WHERE role_name = '{role}'""")
+        
+        # Execute a command: add user and create profile if new user is member
+        cur.execute(f"""INSERT INTO users (password, first_name, last_name, email, phone, role)
+                        VALUES ('password', '{first_name}', '{last_name}', '{email}', '{phone}', {cur.fetchone()[0]} )
+                        RETURNING user_id""")
+        
+        new_id = cur.fetchone()[0]
+        cur.execute(f"""INSERT INTO members 
+                        VALUES ({new_id}, 0, '{date.today().strftime('%Y-%m-%d')}')""")
+        conn.commit()
+        
+        if role == 'Member':
+            cur.execute(f"""INSERT INTO profiles (member)
+                        VALUES ({new_id})""")
+        conn.commit()
+
+        print(f"{role} created successfully, their id is {new_id}")
+
+    except Exception as error:
+        print("ERROR:", error)
+        # Close cursor and communication with the database
+        cur.close()
+        conn.close()
+
 def memberMenu():
     # Get member profile_id
     getProfile()
@@ -302,9 +369,7 @@ def memberMenu():
 
 def trainerMenu():
     while True:
-        opt = input (
-"""\nWhat would you like to do? \n1. Check schedule \n2. View member profile \n3. Logout \n---> """
-)
+        opt = input ("\nWhat would you like to do? \n1. Check schedule \n2. View member profile \n3. Logout \n---> ")
         match opt:
             case '1':
                 printSchedule()
@@ -321,51 +386,22 @@ def trainerMenu():
     cur.close()
     conn.close() 
 
-def addStudent(first_name, last_name, email, enrollment_date):
-    try:
-        # Execute a command: insert data into students table
-        cur.execute(f"""INSERT INTO students (first_name, last_name, email, enrollment_date) 
-                        VALUES('{first_name}','{last_name}','{email}','{enrollment_date}')""")
-        # Make the changes to the database persistent
-        conn.commit()
-        
-        print('Student added successfully!')
-        print("Here's the updated table: \n")
-        getAllStudents()
+def adminMenu():
+    while True:
+        opt = input ("\nWhat would you like to do? \n1. Add User \n2. Logout \n---> ")
+        match opt:
+            case '1':
+                addUser()
+            case '2':
+                global currUser 
+                currUser = User()
+                break
+            case _:
+                print("Invalid option. Please choose a valid option.")
 
-    except Exception as error:
-        print("ERROR:", error)
-        # Close cursor and communication with the database
-        cur.close()
-        conn.close()
+    # Close cursor and communication with the database
+    cur.close()
+    conn.close() 
 
-def deleteStudent(student_id):
-    try:
-         #Validate student_id
-        cur.execute(f"""SELECT * FROM students
-                        WHERE student_id = {student_id}""")
-        if cur.fetchall() == []:
-            raise Exception("student_id does not exist in table")
-        
-        # Execute a command: delete student from database
-        cur.execute(f"""DELETE from students 
-                        WHERE student_id = {student_id}""")
-        # Make the changes to the database persistent
-        conn.commit()
-
-        print('Student deleted successfully!')
-        print("Here's the updated table: \n")
-        getAllStudents()
-
-    except Exception as error:
-        print("ERROR:", error)
-         # Close cursor and communication with the database
-        cur.close()
-        conn.close()
-
-    
 if __name__ == '__main__':
-    args = sys.argv
     login()
-    # Get cmd line arguments and pass them to the desired function
-    # globals()[args[1]](*args[2:])
